@@ -1,7 +1,8 @@
-#!/usr/bin/python
+
 import json
 import sys
 import csv
+from datetime import date
 from enum import Enum
 
 import requests
@@ -11,7 +12,7 @@ import re
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from datetime import date
+import time
 import ctypes as ct
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +22,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 log = logging.getLogger('AnnotatorCore')
 
 # API timeout is set to two minutes
-REQUEST_TIMEOUT = 120
+REQUEST_TIMEOUT = 1*60
 
 csv.field_size_limit(int(ct.c_ulong(-1).value // 2)) # Deal with overflow problem on Windows, https://stackoverflow.co/120m/questions/15063936/csv-error-field-larger-than-field-limit-131072
 sizeLimit = csv.field_size_limit()
@@ -1523,7 +1524,20 @@ def pull_hgvsg_info(queries, annotate_hotspot):
 
 def pull_genomic_change_info(queries, annotate_hotspot):
     url = oncokbapiurl + '/annotate/mutations/byGenomicChange'
-    response = makeoncokbpostrequest(url, queries)
+    retries = 1
+    success = False
+    # https://stackoverflow.com/questions/23267409/how-to-implement-retry-mechanism-into-python-requests-library
+    # but there is a better way with Requests
+    while not success:
+        try:
+            response = makeoncokbpostrequest(url, queries)
+            success = True
+        except Exception as e:
+            wait = retries * 30
+            print('Error! Waiting %s secs and re-trying...' % wait)
+            sys.stdout.flush()
+            time.sleep(wait)
+            retries += 1
     if response.status_code == 401:
         raise Exception('unauthorized')
     annotation = []

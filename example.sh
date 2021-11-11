@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+
 IMAF="data/example_maf.txt"
 OMAF="data/example_maf.oncokb.txt"
 

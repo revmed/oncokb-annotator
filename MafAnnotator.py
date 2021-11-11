@@ -1,4 +1,4 @@
-#!/usr/bin/python
+
 
 import argparse
 from AnnotatorCore import *
