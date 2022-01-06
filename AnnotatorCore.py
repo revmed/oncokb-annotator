@@ -1565,8 +1565,21 @@ def pull_genomic_change_info(queries, annotate_hotspot):
 
 def pull_cna_info(queries):
     url = oncokbapiurl + '/annotate/copyNumberAlterations'
-
-    response = makeoncokbpostrequest(url, queries)
+                         
+    retries = 1
+    success = False
+    # https://stackoverflow.com/questions/23267409/how-to-implement-retry-mechanism-into-python-requests-library
+    # but there is a better way with Requests
+    while not success:
+        try:
+            response = makeoncokbpostrequest(url, queries)
+            success = True
+        except Exception as e:
+            wait = retries * 30
+            print('Error! Waiting %s secs and re-trying...' % wait)
+            sys.stdout.flush()
+            time.sleep(wait)
+            retries += 1
     if response.status_code == 401:
         raise Exception('unauthorized')
     annotation = []
@@ -1782,7 +1795,8 @@ def readheaders(reader):
             headers["length"] = len(row)
             i = 0
             for h in row:
-                h=h.strip()
+                h = h.strip()
+
                 headers[h.upper()] = i
                 headers[h] = i
                 i = i + 1
